@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import './NewSubject.dart';
 
-class Task extends StatefulWidget {
+class Completed extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    return _TaskState();
+    return _CompletedState();
   }
 }
 
-class _TaskState extends State<Task> {
+class _CompletedState extends State<Completed> {
   Map<String, bool> todos = {};
 
   @override
@@ -23,7 +22,7 @@ class _TaskState extends State<Task> {
   }
 
   void _filterCompleteTask() {
-    todos = Map.fromIterable(todos.keys.where((k) => todos[k] == false),
+    todos = Map.fromIterable(todos.keys.where((k) => todos[k] == true),
         key: (k) => k, value: (k) => todos[k]);
   }
 
@@ -42,13 +41,8 @@ class _TaskState extends State<Task> {
         title: Text('Task'),
         actions: <Widget>[
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NewSubject()),
-              );
-            },
-            icon: Icon(Icons.add),
+            onPressed: () {},
+            icon: Icon(Icons.delete),
           )
         ],
       ),

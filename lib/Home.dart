@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'Holder.dart';
+import './Completed.dart';
+import './Task.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -11,7 +12,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int index = 0;
 
-  final List<Widget> _children = [Holder('Task'), Holder('Completed')];
+  final List<Widget> _children = [Task(), Completed()];
 
   void _navHandler(int index) {
     setState(() {
