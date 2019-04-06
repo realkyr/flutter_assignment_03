@@ -41,7 +41,11 @@ class _CompletedState extends State<Completed> {
         title: Text('Task'),
         actions: <Widget>[
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                todos = {};
+              });
+            },
             icon: Icon(Icons.delete),
           )
         ],

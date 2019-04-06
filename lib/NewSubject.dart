@@ -24,6 +24,7 @@ class _NewSubjectState extends State<NewSubject> {
         title: Text('New Subject'),
       ),
       body: ListView(
+        padding: EdgeInsets.symmetric(horizontal: 8.0),
         children: <Widget>[
           TextField(
             controller: _text,
