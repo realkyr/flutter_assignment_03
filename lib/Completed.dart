@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import './Model/Todo.dart';
+import './Model/Database.dart';
 
 class Completed extends StatefulWidget {
   @override
@@ -10,18 +11,20 @@ class Completed extends StatefulWidget {
 
 class _CompletedState extends State<Completed> {
   Map<int, dynamic> todos = {};
+  DBProvider _db = DBProvider();
 
   @override
   void initState() {
-    List<Todo> _todos = [
-      Todo(id: 01, subject: 'Feed Dogs', done: 0),
-      Todo(id: 02, subject: 'Go to cinema', done: 1),
-      Todo(id: 02, subject: 'Coding mobile', done: 1),
-    ];
-    _todos.forEach((Todo t) => todos.addAll(t.toMap()));
-
-    _filterUncompletedTask();
     super.initState();
+    _db.initDB().then((result) {
+      _db.getTasks().then((result) {
+        List<Todo> _todos = result;
+        setState(() {
+          _todos.forEach((Todo t) => todos.addAll(t.toMap()));
+        });
+        _filterUncompletedTask();
+      });
+    });
   }
 
   void _filterUncompletedTask() {
@@ -32,6 +35,8 @@ class _CompletedState extends State<Completed> {
   void _toggleList(int key, bool value) {
     setState(() {
       todos[key]['done'] = value;
+      _db.update(
+          Todo(id: key, subject: todos[key]['subject'], done: value ? 1 : 0));
       _filterUncompletedTask();
     });
   }
@@ -47,6 +52,7 @@ class _CompletedState extends State<Completed> {
             onPressed: () {
               setState(() {
                 todos = {};
+                _db.deleteDone();
               });
             },
             icon: Icon(Icons.delete),

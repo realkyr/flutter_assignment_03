@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './NewSubject.dart';
 import './Model/Todo.dart';
+import './Model/Database.dart';
 
 class Task extends StatefulWidget {
   @override
@@ -11,32 +12,48 @@ class Task extends StatefulWidget {
 
 class _TaskState extends State<Task> {
   Map<int, dynamic> todos = {};
+  DBProvider _db = DBProvider();
 
   @override
   void initState() {
-    List<Todo> _todos = [
-      Todo(id: 01, subject: 'Feed Dogs', done: 0),
-      Todo(id: 02, subject: 'Go to cinema', done: 0),
-      Todo(id: 02, subject: 'Coding mobile', done: 0),
-    ];
-    _todos.forEach((Todo t) => todos.addAll(t.toMap()));
-
-    _filterCompleteTask();
     super.initState();
+    _db.initDB().then((result) {
+      _db.getTasks().then((result) {
+        List<Todo> _todos = result;
+        setState(() {
+          _todos.forEach((Todo t) => todos.addAll(t.toMap()));
+        });
+        _filterCompleteTask();
+      });
+    });
   }
 
   void _filterCompleteTask() {
-    todos = Map.fromIterable(todos.keys.where((k) => !todos[k]['done']),
-        key: (k) => k, value: (k) => todos[k]);
+    setState(() {
+      todos = Map.fromIterable(todos.keys.where((k) => !todos[k]['done']),
+          key: (k) => k, value: (k) => todos[k]);
+    });
   }
 
-  void _addTask(Map<int, dynamic> task) {
-    todos.addAll(task);
+  Future _addTask(String task) async {
+    Todo todo = Todo(subject: task, done: 0);
+    Todo newTask = await _db.insert(todo);
+    print(newTask.getId);
+    setState(() {
+      todos.addAll(
+        {newTask.getId: {
+          'subject': task,
+          'done': false
+        }}
+      );
+    });
   }
 
   void _toggleList(int key, bool value) {
     setState(() {
       todos[key]['done'] = value;
+      _db.update(
+          Todo(id: key, subject: todos[key]['subject'], done: value ? 1 : 0));
       _filterCompleteTask();
     });
   }
@@ -54,8 +71,8 @@ class _TaskState extends State<Task> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => NewSubject(
-                          onAddNewTask: (Map<int, dynamic> task) {
-                            _addTask(task);
+                          onAddNewTask: (String task) async {
+                            await _addTask(task);
                           },
                         )),
               );

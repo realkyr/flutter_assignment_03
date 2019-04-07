@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 
-typedef TaskCallback = void Function(Map<int, dynamic> task);
+typedef TaskCallback = void Function(String task);
 
 class NewSubject extends StatefulWidget {
   const NewSubject({this.onAddNewTask});
@@ -45,12 +44,7 @@ class _NewSubjectState extends State<NewSubject> {
               if (_text.text == '') {
                 _setError('Please fill subject');
               } else {
-                dynamic rng = Random();
-                rng = int.parse(rng.nextInt(99999).toString());
-                print(rng.runtimeType);
-                widget.onAddNewTask({
-                  rng: {'subject': _text.text, 'done': false}
-                });
+                widget.onAddNewTask(_text.text);
                 Navigator.pop(context);
               }
             },
