@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import './Model/Todo.dart';
 
 class Completed extends StatefulWidget {
   @override
@@ -8,28 +9,30 @@ class Completed extends StatefulWidget {
 }
 
 class _CompletedState extends State<Completed> {
-  Map<String, bool> todos = {};
+  Map<int, dynamic> todos = {};
 
   @override
   void initState() {
-    todos = {
-      'Feed Dogs': true,
-      'Go to cinema': false,
-      'Coding mobile': false,
-    };
-    _filterCompleteTask();
+    List<Todo> _todos = [
+      Todo(id: 01, subject: 'Feed Dogs', done: 0),
+      Todo(id: 02, subject: 'Go to cinema', done: 1),
+      Todo(id: 02, subject: 'Coding mobile', done: 1),
+    ];
+    _todos.forEach((Todo t) => todos.addAll(t.toMap()));
+
+    _filterUncompletedTask();
     super.initState();
   }
 
-  void _filterCompleteTask() {
-    todos = Map.fromIterable(todos.keys.where((k) => todos[k] == true),
+  void _filterUncompletedTask() {
+    todos = Map.fromIterable(todos.keys.where((k) => todos[k]['done']),
         key: (k) => k, value: (k) => todos[k]);
   }
 
-  void _toggleList(String key, bool value) {
+  void _toggleList(int key, bool value) {
     setState(() {
-      todos[key] = value;
-      _filterCompleteTask();
+      todos[key]['done'] = value;
+      _filterUncompletedTask();
     });
   }
 
@@ -38,7 +41,7 @@ class _CompletedState extends State<Completed> {
     return Scaffold(
       resizeToAvoidBottomPadding: false,
       appBar: AppBar(
-        title: Text('Task'),
+        title: Text('Completed'),
         actions: <Widget>[
           IconButton(
             onPressed: () {
@@ -55,10 +58,10 @@ class _CompletedState extends State<Completed> {
               child: Text('No data found..'),
             )
           : ListView(
-              children: todos.keys.map((String key) {
+              children: todos.keys.map((int key) {
                 return CheckboxListTile(
-                  title: Text(key),
-                  value: todos[key],
+                  title: Text(todos[key]['subject']),
+                  value: todos[key]['done'],
                   onChanged: (bool value) {
                     _toggleList(key, value);
                   },
