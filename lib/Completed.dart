@@ -17,14 +17,18 @@ class _CompletedState extends State<Completed> {
   void initState() {
     super.initState();
     _db.initDB().then((result) {
-      _db.getTasks().then((result) {
-        List<Todo> _todos = result;
-        setState(() {
-          _todos.forEach((Todo t) => todos.addAll(t.toMap()));
-        });
-        _filterUncompletedTask();
-      });
+      initTasks();
     });
+  }
+
+  Future<Map<int, dynamic>> initTasks() async {
+    List<Todo> result = await _db.getTasks();
+    List<Todo> _todos = result;
+    setState(() {
+      _todos.forEach((Todo t) => todos.addAll(t.toMap()));
+    });
+    _filterUncompletedTask();
+    return todos;
   }
 
   void _filterUncompletedTask() {
@@ -44,36 +48,45 @@ class _CompletedState extends State<Completed> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomPadding: false,
-      appBar: AppBar(
-        title: Text('Completed'),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () {
-              setState(() {
-                todos = {};
-                _db.deleteDone();
-              });
-            },
-            icon: Icon(Icons.delete),
-          )
-        ],
-      ),
-      body: todos.keys.length == 0
-          ? Center(
-              child: Text('No data found..'),
+        resizeToAvoidBottomPadding: false,
+        appBar: AppBar(
+          title: Text('Completed'),
+          actions: <Widget>[
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  todos = {};
+                  _db.deleteDone();
+                });
+              },
+              icon: Icon(Icons.delete),
             )
-          : ListView(
-              children: todos.keys.map((int key) {
-                return CheckboxListTile(
-                  title: Text(todos[key]['subject']),
-                  value: todos[key]['done'],
-                  onChanged: (bool value) {
-                    _toggleList(key, value);
-                  },
-                );
-              }).toList(),
-            ),
-    );
+          ],
+        ),
+        body: FutureBuilder<Map<int, dynamic>>(
+          future: initTasks(),
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (snapshot.data == null) return Center(child: Text(''));
+            Map<int, dynamic> data = snapshot.data;
+            return todos.keys.length == 0
+                ? Center(
+                    child: Text('No data found..'),
+                  )
+                : ListView.builder(
+                    itemCount: data.keys.length,
+                    itemBuilder: (context, index) {
+                      int key = data.keys.toList()[index];
+                      Map<String, dynamic> task = data[key];
+                      return CheckboxListTile(
+                        title: Text(task['subject']),
+                        value: task['done'],
+                        onChanged: (bool value) {
+                          _toggleList(key, value);
+                        },
+                      );
+                    });
+          },
+        )
+      );
   }
 }

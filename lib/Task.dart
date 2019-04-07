@@ -18,14 +18,18 @@ class _TaskState extends State<Task> {
   void initState() {
     super.initState();
     _db.initDB().then((result) {
-      _db.getTasks().then((result) {
-        List<Todo> _todos = result;
-        setState(() {
-          _todos.forEach((Todo t) => todos.addAll(t.toMap()));
-        });
-        _filterCompleteTask();
-      });
+      initTasks();
     });
+  }
+
+  Future<Map<int, dynamic>> initTasks() async {
+    List<Todo> result = await _db.getTasks();
+    List<Todo> _todos = result;
+    setState(() {
+      _todos.forEach((Todo t) => todos.addAll(t.toMap()));
+    });
+    _filterCompleteTask();
+    return todos;
   }
 
   void _filterCompleteTask() {
@@ -40,12 +44,9 @@ class _TaskState extends State<Task> {
     Todo newTask = await _db.insert(todo);
     print(newTask.getId);
     setState(() {
-      todos.addAll(
-        {newTask.getId: {
-          'subject': task,
-          'done': false
-        }}
-      );
+      todos.addAll({
+        newTask.getId: {'subject': task, 'done': false}
+      });
     });
   }
 
@@ -61,41 +62,49 @@ class _TaskState extends State<Task> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomPadding: false,
-      appBar: AppBar(
-        title: Text('Task'),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => NewSubject(
-                          onAddNewTask: (String task) async {
-                            await _addTask(task);
-                          },
-                        )),
-              );
-            },
-            icon: Icon(Icons.add),
-          )
-        ],
-      ),
-      body: todos.keys.length == 0
-          ? Center(
-              child: Text('No data found..'),
-            )
-          : ListView(
-              children: todos.keys.map((int key) {
-                return CheckboxListTile(
-                  title: Text(todos[key]['subject']),
-                  value: todos[key]['done'],
-                  onChanged: (bool value) {
-                    _toggleList(key, value);
-                  },
+        resizeToAvoidBottomPadding: false,
+        appBar: AppBar(
+          title: Text('Task'),
+          actions: <Widget>[
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => NewSubject(
+                            onAddNewTask: (String task) async {
+                              await _addTask(task);
+                            },
+                          )),
                 );
-              }).toList(),
-            ),
-    );
+              },
+              icon: Icon(Icons.add),
+            )
+          ],
+        ),
+        body: FutureBuilder<Map<int, dynamic>>(
+          future: initTasks(),
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (snapshot.data == null) return Center(child: Text(''));
+            Map<int, dynamic> data = snapshot.data;
+            return todos.keys.length == 0
+                ? Center(
+                    child: Text('No data found..'),
+                  )
+                : ListView.builder(
+                    itemCount: data.keys.length,
+                    itemBuilder: (context, index) {
+                      int key = data.keys.toList()[index];
+                      Map<String, dynamic> task = data[key];
+                      return CheckboxListTile(
+                        title: Text(task['subject']),
+                        value: task['done'],
+                        onChanged: (bool value) {
+                          _toggleList(key, value);
+                        },
+                      );
+                    });
+          },
+        ));
   }
 }
