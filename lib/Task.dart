@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import './NewSubject.dart';
-import './Model/Todo.dart';
-import './Model/Database.dart';
 
 class Task extends StatefulWidget {
   @override
@@ -11,51 +10,51 @@ class Task extends StatefulWidget {
 }
 
 class _TaskState extends State<Task> {
-  Map<int, dynamic> todos = {};
-  DBProvider _db = DBProvider();
+  Map<String, dynamic> todos = {};
 
   @override
   void initState() {
     super.initState();
-    _db.initDB().then((result) {
-      initTasks();
-    });
+    initTasks();
   }
 
-  Future<Map<int, dynamic>> initTasks() async {
-    List<Todo> result = await _db.getTasks();
-    List<Todo> _todos = result;
+  Future<Map<String, dynamic>> initTasks() async {
+    QuerySnapshot docs = await Firestore.instance
+      .collection('todo')
+      .where('done', isEqualTo: false)
+      .getDocuments();
+    Map<String, dynamic> _todos = {};
+    docs.documents.forEach((doc) => _todos[doc.documentID] = doc.data);
     setState(() {
-      _todos.forEach((Todo t) => todos.addAll(t.toMap()));
+      todos = _todos;
     });
-    _filterCompleteTask();
     return todos;
   }
 
-  void _filterCompleteTask() {
-    setState(() {
-      todos = Map.fromIterable(todos.keys.where((k) => !todos[k]['done']),
-          key: (k) => k, value: (k) => todos[k]);
-    });
-  }
-
   Future _addTask(String task) async {
-    Todo todo = Todo(subject: task, done: 0);
-    Todo newTask = await _db.insert(todo);
-    print(newTask.getId);
+    DocumentReference ref = await Firestore.instance
+      .collection('todo')
+      .add({
+        'title': task,
+        'done': false
+      });
+
     setState(() {
       todos.addAll({
-        newTask.getId: {'subject': task, 'done': false}
+        ref.documentID: {'title': task, 'done': false}
       });
     });
   }
 
-  void _toggleList(int key, bool value) {
+  void _toggleList(String key, bool value) {
     setState(() {
-      todos[key]['done'] = value;
-      _db.update(
-          Todo(id: key, subject: todos[key]['subject'], done: value ? 1 : 0));
-      _filterCompleteTask();
+      dynamic data = todos.remove(key);
+      if (data != null) {
+        Firestore.instance
+          .collection('todo')
+          .document(key)
+          .updateData({'done': true});
+      }
     });
   }
 
@@ -82,11 +81,11 @@ class _TaskState extends State<Task> {
             )
           ],
         ),
-        body: FutureBuilder<Map<int, dynamic>>(
+        body: FutureBuilder<Map<String, dynamic>>(
           future: initTasks(),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (snapshot.data == null) return Center(child: Text(''));
-            Map<int, dynamic> data = snapshot.data;
+            Map<String, dynamic> data = snapshot.data;
             return todos.keys.length == 0
                 ? Center(
                     child: Text('No data found..'),
@@ -94,10 +93,10 @@ class _TaskState extends State<Task> {
                 : ListView.builder(
                     itemCount: data.keys.length,
                     itemBuilder: (context, index) {
-                      int key = data.keys.toList()[index];
+                      String key = data.keys.toList()[index];
                       Map<String, dynamic> task = data[key];
                       return CheckboxListTile(
-                        title: Text(task['subject']),
+                        title: Text(task['title']),
                         value: task['done'],
                         onChanged: (bool value) {
                           _toggleList(key, value);
