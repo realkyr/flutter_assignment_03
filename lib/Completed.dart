@@ -59,7 +59,7 @@ class _CompletedState extends State<Completed> {
     return Scaffold(
         resizeToAvoidBottomPadding: false,
         appBar: AppBar(
-          title: Text('Task'),
+          title: Text('Complete'),
           actions: <Widget>[
             IconButton(
               onPressed: () {
